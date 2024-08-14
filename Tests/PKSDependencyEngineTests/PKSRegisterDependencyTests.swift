@@ -47,6 +47,8 @@ final class PKSRegisterDependencyTests: XCTestCase {
         // Given
         @PKSRegisterDependency(.never, engine: depencyEngine) var service: MockServiceProtocol = MockService()
         
+        service = MockService()
+        
         // When
         depencyEngine.removeDependency(for: MockServiceProtocol.self)
         
