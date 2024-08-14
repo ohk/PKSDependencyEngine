@@ -85,4 +85,17 @@ public final class PKSDependencyEngine {
             self.dependencies = [:]
         }
     }
+
+    /// Removes a dependency for a given type.
+    /// 
+    /// - Parameter interface: The type of the interface or class to remove.
+    /// - Note: This method is thread-safe.
+    /// - Warning: This method will remove the dependency from the engine. Use with caution in production code.
+    /// - Warning: This method will not throw an error if the dependency is not found.
+    public func removeDependency<Value>(for interface: Value.Type) {
+        queue.async(flags: .barrier) {
+            self.logger.log("Removing dependency for \(interface)")
+            self.dependencies.removeValue(forKey: ObjectIdentifier(interface))
+        }
+    }
 }
