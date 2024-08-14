@@ -17,10 +17,10 @@ jobs:
       - name: Set up Swift
         uses: fwal/setup-swift@v1
         with:
-          swift-version: '5.9'
-          
+          swift-version: "5.10"
+
       - name: Build the package
-        run: swift build --build-tests -Xswiftc -enable-code-coverage
+        run: swift build --enable-test-discovery # Use --enable-test-discovery to automatically discover tests
 
       - name: Run tests with coverage
         run: swift test --enable-code-coverage
