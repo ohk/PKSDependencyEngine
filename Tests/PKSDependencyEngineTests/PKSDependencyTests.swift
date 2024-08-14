@@ -18,6 +18,18 @@ final class PKSDependencyTests: XCTestCase {
         depencyEngine.clearDependencies()
     }
 
+    func testDependencyValueManualInjected() {
+        // Given
+        let service = MockService()
+        
+        // When
+        @PKSDependency(value: service, engine: depencyEngine) var resolvedService: MockServiceProtocol
+        
+        // Then
+        XCTAssertEqual(resolvedService.doSomething(), service.doSomething())
+        XCTAssertEqual(resolvedService.id, service.id)
+    }
+
     func testResolveDependencyAutomatically() {
         // Given
         let service = MockService()
