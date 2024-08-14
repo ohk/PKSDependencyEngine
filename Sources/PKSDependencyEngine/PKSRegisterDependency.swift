@@ -62,13 +62,10 @@ public class PKSRegisterDependency<Value> {
         set {
             value = newValue
             engine.register(self.value, for: Value.self)
+            
+            if destroyType == .never {
+                self.engine.addNonDestroyableDependency(for: Value.self)
+            }
         }
-    }
-
-    /// The destroy type configuration.
-    ///
-    /// - Returns: The destroy type associated with this dependency.
-    public var destroyTypeConfig: DependencyDestroyType {
-        get { destroyType }
     }
 }
