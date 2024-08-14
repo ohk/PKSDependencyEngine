@@ -17,7 +17,7 @@ jobs:
       - name: Set up Swift
         uses: fwal/setup-swift@v1
         with:
-          swift-version: "5.10"
+          swift-version: "5.9"
 
       - name: Build the package
         run: swift build --enable-test-discovery # Use --enable-test-discovery to automatically discover tests
