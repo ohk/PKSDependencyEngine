@@ -43,9 +43,6 @@ public final class PKSDependencyEngine {
     
     /// The shared singleton instance of `PKSDependencyEngine`.
     public static let shared = PKSDependencyEngine()
-    
-    /// A private initializer to prevent external instantiation of the class.
-    private init() {}
 
     /// A list of dependencies that should not be destroyed when `removeDependency` is called.
     private var nonDestroyableDependencies: [ObjectIdentifier] = []
