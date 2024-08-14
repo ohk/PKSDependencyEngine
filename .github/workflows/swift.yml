@@ -14,11 +14,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Swift
-        uses: fwal/setup-swift@v1
-        with:
-          swift-version: '5.8' # Specify the Swift version you want to use
-
       - name: Build the package
         run: swift build --build-tests -Xswiftc -enable-code-coverage
 
