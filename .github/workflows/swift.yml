@@ -23,4 +23,5 @@ jobs:
         run: swift test --enable-code-coverage
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1.2.1
+        uses: codecov/codecov-action@v4.5.0
+        
