@@ -19,26 +19,8 @@ jobs:
         with:
           swift-version: "5.9"
 
-      - name: Build the package
-        run: swift build --enable-test-discovery # Use --enable-test-discovery to automatically discover tests
-
       - name: Run tests with coverage
         run: swift test --enable-code-coverage
 
-      - name: Generate coverage report
-        run: |
-          xcrun llvm-cov report \
-            .build/debug/my-package-nameTests.xctest/Contents/MacOS/my-package-nameTests \
-            --instr-profile=.build/debug/codecov/default.profdata \
-            > coverage.txt
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v3
-        with:
-          name: code-coverage-report
-          path: coverage.txt
-
-      - name: Upload code coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }} # Set your Codecov token in GitHub secrets
+       - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1.2.1
