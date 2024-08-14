@@ -1,0 +1,44 @@
+name: Swift Package CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Swift
+        uses: fwal/setup-swift@v1
+        with:
+          swift-version: '5.8' # Specify the Swift version you want to use
+
+      - name: Build the package
+        run: swift build --build-tests -Xswiftc -enable-code-coverage
+
+      - name: Run tests with coverage
+        run: swift test --enable-code-coverage
+
+      - name: Generate coverage report
+        run: |
+          xcrun llvm-cov report \
+            .build/debug/my-package-nameTests.xctest/Contents/MacOS/my-package-nameTests \
+            --instr-profile=.build/debug/codecov/default.profdata \
+            > coverage.txt
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-coverage-report
+          path: coverage.txt
+
+      - name: Upload code coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # Set your Codecov token in GitHub secrets
