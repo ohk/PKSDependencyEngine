@@ -52,7 +52,7 @@ public final class PKSDependencyEngine {
     ///   - interface: The type of the interface or class that the dependency conforms to.
     public func register<Value>(_ value: @autoclosure @escaping () -> Value, for interface: Value.Type) {
         queue.async(flags: .barrier) {
-            // Add registered log
+            self.logger.log("Registering dependency for \(interface)")
             self.dependencies[ObjectIdentifier(interface)] = value
         }
     }
@@ -63,13 +63,13 @@ public final class PKSDependencyEngine {
     /// - Returns: The resolved dependency instance.
     /// - Throws: A `fatalError` if no dependency is found for the specified type.
     public func read<Value>(for interface: Value.Type) -> Value {
-        // add reaching log
+        logger.log("Resolving dependency for \(interface)")
         return queue.sync {
             guard let value = dependencies[ObjectIdentifier(interface)]?() as? Value else {
-                // add error log
+                logger.log("Dependency for \(interface) is not found")
                 fatalError("Implementation for \(interface) is not found")
             }
-            // add reached log
+            logger.log("Dependency for \(interface) is resolved")
             return value
         }
     }
@@ -81,6 +81,7 @@ public final class PKSDependencyEngine {
     /// - Warning: This method will remove all dependencies from the engine. Use with caution in production code.
     public func clearDependencies() {
         queue.async(flags: .barrier) {
+            self.logger.log("Clearing all dependencies")
             self.dependencies = [:]
         }
     }
