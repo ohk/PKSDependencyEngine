@@ -41,4 +41,46 @@ final class PKSRegisterDependencyTests: XCTestCase {
         let resolvedService: MockServiceProtocol = PKSDependencyEngine.shared.read(for: MockServiceProtocol.self)
         XCTAssertEqual(resolvedService.doSomething(), newService.doSomething())
     }
+
+    func testRegisterNonDestroyableDependency() {
+        // Given
+        @PKSRegisterDependency(.never) var service: MockServiceProtocol = MockService()
+        
+        // When
+        PKSDependencyEngine.shared.removeDependency(for: MockServiceProtocol.self)
+        
+        // Then
+        let resolvedService: MockServiceProtocol = PKSDependencyEngine.shared.read(for: MockServiceProtocol.self)
+
+        XCTAssertEqual(resolvedService.doSomething(), "MockService did something!")
+    }
+    
+    func testRegisterDependencyWithDestroyType() {
+        // Given
+        @PKSRegisterDependency(.onRelease) var service: MockServiceProtocol = MockService()
+        
+        // When
+        PKSDependencyEngine.shared.removeDependency(for: MockServiceProtocol.self)
+        
+        // Then
+        let expectedFatalErrorMessage = "Implementation for MockServiceProtocol is not found"
+        
+        expectFatalError(expectedMessage: expectedFatalErrorMessage) {
+            _ = PKSDependencyEngine.shared.read(for: MockServiceProtocol.self)
+        }
+    }
+
+    func testRegisterDependecyDestroyOnRelease() {
+        // Given
+        @PKSRegisterDependency(.onRelease) var service: MockServiceProtocol = MockService()
+        
+        // Then
+        addTeardownBlock {
+            let expectedFatalErrorMessage = "Implementation for MockServiceProtocol is not found"
+                    
+            self.expectFatalError(expectedMessage: expectedFatalErrorMessage) {
+                _ = PKSDependencyEngine.shared.read(for: MockServiceProtocol.self)
+            }
+        }
+    }
 }

@@ -25,15 +25,33 @@ public class PKSRegisterDependency<Value> {
     // The engine responsible for registering dependencies.
     private let engine: PKSDependencyEngine
     
+    // The type that defines how the dependency should be destroyed.
+    private var destroyType: DependencyDestroyType
+
     /// Initializes a `PKSRegisterDependency` and registers the provided dependency.
     ///
     /// - Parameters:
+    ///   - destroyType: The type defining how the dependency should be destroyed.
     ///   - wrappedValue: The dependency instance to be registered.
     ///   - engine: The dependency engine to use for registration. Defaults to the shared instance.
-    public init(wrappedValue: Value, engine: PKSDependencyEngine = .shared) {
+    public init(wrappedValue: Value, _ destroyType: DependencyDestroyType = .notConfigured, engine: PKSDependencyEngine = .shared) {
         self.value = wrappedValue
         self.engine = engine
+        self.destroyType = destroyType
         self.engine.register(wrappedValue, for: Value.self)
+
+        if destroyType == .never {
+            self.engine.addNonDestroyableDependency(for: Value.self)
+        }
+    }
+
+    /// Deinitializes the dependency and removes it from the `PKSDependencyEngine`.
+    /// 
+    /// If the destroy type is set to `.onRelease`, the dependency will be removed when the wrapper is deinitialized.
+    deinit {
+        if destroyType == .onRelease {
+            engine.removeDependency(for: Value.self)
+        }
     }
     
     /// The registered dependency value.
@@ -45,5 +63,12 @@ public class PKSRegisterDependency<Value> {
             value = newValue
             engine.register(self.value, for: Value.self)
         }
+    }
+
+    /// The destroy type configuration.
+    ///
+    /// - Returns: The destroy type associated with this dependency.
+    public var destroyTypeConfig: DependencyDestroyType {
+        get { destroyType }
     }
 }

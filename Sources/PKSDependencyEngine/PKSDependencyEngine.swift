@@ -44,6 +44,12 @@ public final class PKSDependencyEngine {
     /// The shared singleton instance of `PKSDependencyEngine`.
     public static let shared = PKSDependencyEngine()
     
+    /// A private initializer to prevent external instantiation of the class.
+    private init() {}
+
+    /// A list of dependencies that should not be destroyed when `removeDependency` is called.
+    private var nonDestroyableDependencies: [ObjectIdentifier] = []
+
     /// Registers a dependency for a given type.
     ///
     /// - Parameters:
@@ -94,8 +100,27 @@ public final class PKSDependencyEngine {
     /// - Warning: This method will not throw an error if the dependency is not found.
     public func removeDependency<Value>(for interface: Value.Type) {
         queue.async(flags: .barrier) {
-            self.logger.log("Removing dependency for \(interface)")
-            self.dependencies.removeValue(forKey: ObjectIdentifier(interface))
+            if self.nonDestroyableDependencies.contains(ObjectIdentifier(interface)) {
+                self.logger.log("Dependency for \(interface) is non-destroyable")
+            } else {
+                self.logger.log("Removing dependency for \(interface)")
+                self.dependencies.removeValue(forKey: ObjectIdentifier(interface))
+            }
+        }
+    }
+
+    /// Adds a dependency to the non-destroyable list.
+    /// 
+    /// - Parameter interface: The type of the interface or class to add to the non-destroyable list.
+    /// - Note: This method is thread-safe.
+    /// - Warning: This method will add the dependency to the non-destroyable list. Use with caution in production code.
+    /// - Warning: This method will not throw an error if the dependency is already in the non-destroyable list.
+    /// - Warning: This method will not throw an error if the dependency is not found.
+    /// 
+    public func addNonDestroyableDependency<Value>(for interface: Value.Type) {
+        queue.async(flags: .barrier) {
+            self.logger.log("Adding dependency for \(interface) to non-destroyable list")
+            self.nonDestroyableDependencies.append(ObjectIdentifier(interface))
         }
     }
 }
