@@ -10,20 +10,21 @@ import XCTest
 
 
 final class PKSDependencyTests: XCTestCase {
-
+    let depencyEngine = PKSDependencyEngine()
+    
     override func setUp() {
         super.setUp()
         // Clear the dependency engine before each test
-        PKSDependencyEngine.shared.clearDependencies()
+        depencyEngine.clearDependencies()
     }
 
     func testResolveDependencyAutomatically() {
         // Given
         let service = MockService()
-        PKSDependencyEngine.shared.register(service as MockServiceProtocol, for: MockServiceProtocol.self)
+        depencyEngine.register(service as MockServiceProtocol, for: MockServiceProtocol.self)
         
         // When
-        @PKSDependency var resolvedService: MockServiceProtocol
+        @PKSDependency(engine: depencyEngine) var resolvedService: MockServiceProtocol
         
         // Then
         XCTAssertEqual(resolvedService.doSomething(), service.doSomething())
@@ -31,7 +32,7 @@ final class PKSDependencyTests: XCTestCase {
     
     func testSetDependencyManually() {
         // Given
-        @PKSDependency var resolvedService: MockServiceProtocol
+        @PKSDependency(engine: depencyEngine) var resolvedService: MockServiceProtocol
         let service = MockService()
         
         // When

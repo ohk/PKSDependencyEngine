@@ -2,11 +2,12 @@ import XCTest
 @testable import PKSDependencyEngine
 
 final class PKSDependencyEngineTests: XCTestCase {
+    let depencyEngine = PKSDependencyEngine()
 
     override func setUp() {
         super.setUp()
         // Clear the dependency engine before each test
-        PKSDependencyEngine.shared.clearDependencies()
+        depencyEngine.clearDependencies()
     }
 
     func testRegisterAndResolveDependency() {
@@ -14,8 +15,8 @@ final class PKSDependencyEngineTests: XCTestCase {
         let service = MockService()
         
         // When
-        PKSDependencyEngine.shared.register(service as MockServiceProtocol, for: MockServiceProtocol.self)
-        let resolvedService: MockServiceProtocol = PKSDependencyEngine.shared.read(for: MockServiceProtocol.self)
+        depencyEngine.register(service as MockServiceProtocol, for: MockServiceProtocol.self)
+        let resolvedService: MockServiceProtocol = depencyEngine.read(for: MockServiceProtocol.self)
         
         // Then
         XCTAssertEqual(resolvedService.doSomething(), service.doSomething())

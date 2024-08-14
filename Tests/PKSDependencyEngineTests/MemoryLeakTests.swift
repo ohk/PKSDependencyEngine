@@ -9,10 +9,13 @@ import XCTest
 @testable import PKSDependencyEngine
 
 final class MemoryLeakTests: XCTestCase {
-    func trackForMemoryLeak(instance: Any?,
-                            file: StaticString = #filePath,
-                            line: UInt = #line,
-                            expectedLeak: Bool = false
+    let depencyEngine = PKSDependencyEngine()
+    
+    func trackForMemoryLeak(
+        instance: Any?,
+        file: StaticString = #filePath,
+        line: UInt = #line,
+        expectedLeak: Bool = false
     ) {
         guard instance != nil, let instance = instance as? AnyObject else {
             return // If instance is not a class instance, no need to track it for memory leaks
@@ -44,7 +47,7 @@ final class MemoryLeakTests: XCTestCase {
         let service3: MockServiceProtocol? = MockService()
         
         
-        @PKSRegisterDependency var resolvedService: MockServiceProtocol = service!
+        @PKSRegisterDependency(engine: depencyEngine) var resolvedService: MockServiceProtocol = service!
         
         resolvedService = service2! // Re-assign to trigger the setter
         resolvedService = service3! // Set to nil if your setter logic allows
