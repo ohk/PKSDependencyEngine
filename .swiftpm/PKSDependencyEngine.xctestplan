@@ -1,0 +1,33 @@
+{
+  "configurations" : [
+    {
+      "id" : "A936CCDE-D53B-487C-A894-FFF5935E0D21",
+      "name" : "Test Scheme Action",
+      "options" : {
+        "addressSanitizer" : {
+          "enabled" : false
+        },
+        "guardMallocEnabled" : false,
+        "mallocGuardEdgesEnabled" : false,
+        "mallocScribbleEnabled" : false,
+        "mallocStackLoggingOptions" : null,
+        "nsZombieEnabled" : false,
+        "threadSanitizerEnabled" : false
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testExecutionOrdering" : "random",
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "PKSDependencyEngineTests",
+        "name" : "PKSDependencyEngineTests"
+      }
+    }
+  ],
+  "version" : 1
+}
