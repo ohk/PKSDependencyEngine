@@ -19,14 +19,10 @@ import Foundation
 /// The dependency will be registered when the wrapper is initialized.
 @propertyWrapper
 public class PKSRegisterDependency<Value> {
-    // The dependency value that is being registered.
-    private var value: Value
-    
-    // The engine responsible for registering dependencies.
+    private var factory: () -> Value
     private let engine: PKSDependencyEngine
-    
-    // The type that defines how the dependency should be destroyed.
     private var destroyType: DependencyDestroyType
+    private let isLazy: Bool
 
     /// Initializes a `PKSRegisterDependency` and registers the provided dependency.
     ///
@@ -34,11 +30,18 @@ public class PKSRegisterDependency<Value> {
     ///   - destroyType: The type defining how the dependency should be destroyed.
     ///   - wrappedValue: The dependency instance to be registered.
     ///   - engine: The dependency engine to use for registration. Defaults to the shared instance.
-    public init(wrappedValue: Value, _ destroyType: DependencyDestroyType = .notConfigured, engine: PKSDependencyEngine = .shared) {
-        self.value = wrappedValue
+    ///   - lazy: Whether to register the dependency lazily. Defaults to `false`.
+    public init(wrappedValue: @autoclosure @escaping () -> Value, _ destroyType: DependencyDestroyType = .notConfigured, lazy: Bool = false, engine: PKSDependencyEngine = .shared) {
+        self.factory = wrappedValue
         self.engine = engine
         self.destroyType = destroyType
-        self.engine.register(wrappedValue, for: Value.self)
+        self.isLazy = lazy
+        
+        if isLazy {
+            self.engine.registerLazy(self.factory, for: Value.self)
+        } else {
+            self.engine.register(self.factory(), for: Value.self)
+        }
 
         if destroyType == .never {
             self.engine.addNonDestroyableDependency(for: Value.self)
@@ -58,10 +61,14 @@ public class PKSRegisterDependency<Value> {
     ///
     /// - Returns: The registered dependency instance.
     public var wrappedValue: Value {
-        get { value }
+        get { engine.read(for: Value.self) }
         set {
-            value = newValue
-            engine.register(self.value, for: Value.self)
+            factory = { newValue }
+            if isLazy {
+                engine.registerLazy(self.factory, for: Value.self)
+            } else {
+                engine.register(newValue, for: Value.self)
+            }
             
             if destroyType == .never {
                 self.engine.addNonDestroyableDependency(for: Value.self)

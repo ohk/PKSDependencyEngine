@@ -32,8 +32,11 @@ import OSLog
 ///
 /// - Note: If a dependency is not found during resolution, the app will crash with a `fatalError`.
 public final class PKSDependencyEngine {
-    // A dictionary that stores closures returning dependencies, keyed by ObjectIdentifier.
-    private var dependencies: [ObjectIdentifier: () -> Any] = [:]
+    // Dictionary for eager registrations
+    private var dependencies: [ObjectIdentifier: Any] = [:]
+    
+    // Dictionary for lazy registrations
+    private var lazyDependencies: [ObjectIdentifier: () -> Any] = [:]
     
     // A concurrent dispatch queue used for thread-safe access to the dependencies dictionary.
     private let queue = DispatchQueue(label: "DependencyEngineQueue", attributes: .concurrent)
@@ -50,13 +53,24 @@ public final class PKSDependencyEngine {
     /// Registers a dependency for a given type.
     ///
     /// - Parameters:
-    ///   - value: A closure that returns the dependency instance. The closure is marked with `@autoclosure`
-    ///            to allow passing the instance directly without explicit closure syntax.
+    ///   - instance: The dependency instance to register.
     ///   - interface: The type of the interface or class that the dependency conforms to.
-    public func register<Value>(_ value: @autoclosure @escaping () -> Value, for interface: Value.Type) {
+    public func register<Value>(_ instance: Value, for interface: Value.Type) {
         queue.async(flags: .barrier) {
             self.logger.log("Registering dependency for \(interface)")
-            self.dependencies[ObjectIdentifier(interface)] = value
+            self.dependencies[ObjectIdentifier(interface)] = instance
+        }
+    }
+
+    /// Registers a lazy dependency for a given type.
+    ///
+    /// - Parameters:
+    ///   - factory: A closure that creates the dependency instance.
+    ///   - interface: The type of the interface or class that the dependency conforms to.
+    public func registerLazy<Value>(_ factory: @escaping () -> Value, for interface: Value.Type) {
+        queue.async(flags: .barrier) {
+            self.logger.log("Registering lazy dependency for \(interface)")
+            self.lazyDependencies[ObjectIdentifier(interface)] = factory
         }
     }
     
@@ -68,40 +82,42 @@ public final class PKSDependencyEngine {
     public func read<Value>(for interface: Value.Type) -> Value {
         logger.log("Resolving dependency for \(interface)")
         return queue.sync {
-            guard let value = dependencies[ObjectIdentifier(interface)]?() as? Value else {
-                logger.log("Dependency for \(interface) is not found")
-                fatalError("Implementation for \(interface) is not found")
+            let key = ObjectIdentifier(interface)
+            
+            if let instance = dependencies[key] as? Value {
+                return instance
             }
-            logger.log("Dependency for \(interface) is resolved")
-            return value
+            
+            if let factory = lazyDependencies[key], let instance = factory() as? Value {
+                dependencies[key] = instance
+                lazyDependencies.removeValue(forKey: key)
+                return instance
+            }
+            
+            logger.log("Dependency for \(interface) is not found")
+            fatalError("Implementation for \(interface) is not found")
         }
     }
     
     /// Clears all dependencies from the engine.
-    /// 
-    /// This method is useful for testing purposes to reset the engine between tests.
-    /// - Note: This method is thread-safe.
-    /// - Warning: This method will remove all dependencies from the engine. Use with caution in production code.
     public func clearDependencies() {
-        queue.async(flags: .barrier) {
+        queue.sync(flags: .barrier) {
             self.logger.log("Clearing all dependencies")
             self.dependencies = [:]
+            self.lazyDependencies = [:]
         }
     }
 
     /// Removes a dependency for a given type.
-    /// 
-    /// - Parameter interface: The type of the interface or class to remove.
-    /// - Note: This method is thread-safe.
-    /// - Warning: This method will remove the dependency from the engine. Use with caution in production code.
-    /// - Warning: This method will not throw an error if the dependency is not found.
     public func removeDependency<Value>(for interface: Value.Type) {
-        queue.async(flags: .barrier) {
-            if self.nonDestroyableDependencies.contains(ObjectIdentifier(interface)) {
+        queue.sync(flags: .barrier) {
+            let key = ObjectIdentifier(interface)
+            if self.nonDestroyableDependencies.contains(key) {
                 self.logger.log("Dependency for \(interface) is non-destroyable")
             } else {
                 self.logger.log("Removing dependency for \(interface)")
-                self.dependencies.removeValue(forKey: ObjectIdentifier(interface))
+                self.dependencies.removeValue(forKey: key)
+                self.lazyDependencies.removeValue(forKey: key)
             }
         }
     }
@@ -115,7 +131,7 @@ public final class PKSDependencyEngine {
     /// - Warning: This method will not throw an error if the dependency is not found.
     /// 
     public func addNonDestroyableDependency<Value>(for interface: Value.Type) {
-        queue.async(flags: .barrier) {
+        queue.sync(flags: .barrier) {
             self.logger.log("Adding dependency for \(interface) to non-destroyable list")
             self.nonDestroyableDependencies.append(ObjectIdentifier(interface))
         }

@@ -13,6 +13,8 @@ Whether you're building a small SwiftUI app or a large-scale enterprise applicat
 - **Supports Both Class and Protocol-Based Dependencies**: Flexibility to use concrete classes or protocols, enabling more testable and decoupled code.
 - **Thread-Safe**: Safely resolve dependencies from multiple threads with no risk of race conditions or unexpected behavior.
 - **No External Dependencies**: PKSDependencyEngine is self-contained, ensuring it integrates cleanly into your project without bringing in additional libraries.
+- **Lazy Loading**: Dependencies are resolved lazily, meaning they are only created when they are accessed for the first time.
+- **Non-Destroyable Dependencies**: Ability to mark certain dependencies as non-destroyable, preventing accidental removal.
 
 ## Getting Started
 
@@ -41,7 +43,9 @@ dependencies: [
 
 ### Step 2: Register Dependencies
 
-Registering dependencies is straightforward with PKSDependencyEngine. You can use the `@PKSRegisterDependency` property wrapper to define and register your dependencies:
+Registering dependencies is straightforward with PKSDependencyEngine. 
+
+#### Using the `@PKSRegisterDependency` property wrapper:
 
 ```swift
 import PKSDependencyEngine
@@ -59,7 +63,58 @@ class App {
 
 In this example, `MyDependency` is registered as a dependency within the `App` class.
 
+#### Using the PKSDependency Singleton:
+
+```swift
+import PKSDependencyEngine
+
+class MyDependency {
+    func doSomething() {
+        print("Doing something...")
+    }
+}
+
+class App {
+    let myDependency: MyDependency = PKSDependencyEngine.shared.register(MyDependency(), for: MyDependency.self)
+}
+```
+
+#### Using the PKSDependency Singleton with Lazy Loading:
+
+```swift
+import PKSDependencyEngine
+
+class MyDependency {
+    func doSomething() {
+        print("Doing something...")
+    }
+}
+
+class App {
+    let myDependency: MyDependency = PKSDependencyEngine.shared.registerLazy { MyDependency() } for: MyDependency.self)
+}
+```
+
+#### Using the PKSDependency Singleton with Non-Destroyable Dependencies:
+
+```swift
+import PKSDependencyEngine
+
+class MyDependency {
+    func doSomething() {
+        print("Doing something...")
+    }
+}
+
+class App {
+    let myDependency: MyDependency = PKSDependencyEngine.shared.register(MyDependency(), for: MyDependency.self)
+    PKSDependencyEngine.shared.addNonDestroyableDependency(for: MyDependency.self)
+}
+```
+
 ### Step 3: Resolve Dependencies
+
+#### Using the `@PKSDependency` property wrapper:
 
 To resolve and use your registered dependencies, simply use the `@PKSDependency` property wrapper:
 
@@ -76,6 +131,14 @@ class MyService {
 ```
 
 In this example, `MyService` automatically resolves and uses the `MyDependency` instance registered earlier.
+
+#### Using the PKSDependency Singleton:
+
+```swift
+class MyService {
+    let dependency: MyDependency = PKSDependencyEngine.shared.read(for: MyDependency.self)
+}
+```
 
 ### Step 4: Protocol-Based Dependencies (Optional)
 

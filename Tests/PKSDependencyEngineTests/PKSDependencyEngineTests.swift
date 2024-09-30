@@ -31,6 +31,47 @@ final class PKSDependencyEngineTests: XCTestCase {
             _ = PKSDependencyEngine.shared.read(for: MockServiceProtocol.self)
         }
     }
+    
+    func testLazyDependencyCreation() {
+        var serviceCreated = false
+        
+        depencyEngine.registerLazy({
+            serviceCreated = true
+            return MockService()
+        }, for: MockServiceProtocol.self)
+        
+        XCTAssertFalse(serviceCreated, "Service should not be created at registration time")
+        
+        let _ : MockServiceProtocol = depencyEngine.read(for: MockServiceProtocol.self)
+        
+        XCTAssertTrue(serviceCreated, "Service should be created when first resolved")
+    }
+
+    func testLazyDependencyWithPropertyWrapper() {
+        var serviceCreated = false
+        
+        @PKSRegisterDependency(lazy: true, engine: depencyEngine) var service: MockServiceProtocol = {
+            serviceCreated = true
+            return MockService()
+        }()
+        
+        XCTAssertFalse(serviceCreated, "Service should not be created at registration time")
+        
+        _ = service
+        
+        XCTAssertTrue(serviceCreated, "Service should be created when first accessed")
+    }
+
+    func testEagerDependencyWithPropertyWrapper() {
+        var serviceCreated = false
+        
+        @PKSRegisterDependency(engine: depencyEngine) var service: MockServiceProtocol = {
+            serviceCreated = true
+            return MockService()
+        }()
+        
+        XCTAssertTrue(serviceCreated, "Service should be created at registration time")
+    }
 }
 
 extension XCTestCase {
