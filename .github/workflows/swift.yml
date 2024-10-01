@@ -36,14 +36,3 @@ jobs:
         flags: unittests
         name: codecov-umbrella
         fail_ci_if_error: true
-
-    - name: Output JUnit XML
-      run: |
-        xcrun xccov view --report --json coverage.lcov > coverage.json
-        xcrun xccov report coverage.json --json --output-path coverage.junit.xml
-
-    - name: Upload test results to Codecov
-      if: ${{ !cancelled() }}
-      uses: codecov/test-results-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
